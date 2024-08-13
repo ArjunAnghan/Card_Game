@@ -89,3 +89,78 @@ func (s *GameService) AddDeckToGame(gameID string, deck *models.Deck) (*models.G
 
 	return &game, nil
 }
+
+// AddPlayer adds a player to a game
+func (s *GameService) AddPlayer(gameID, playerName string) (*models.Game, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	gameIDObj, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, errors.New("invalid game ID")
+	}
+
+	var game models.Game
+	err = s.collection.FindOne(ctx, bson.M{"_id": gameIDObj}).Decode(&game)
+	if err != nil {
+		return nil, errors.New("game not found")
+	}
+
+	// Add the player to the game if they are not already in it
+	for _, player := range game.Players {
+		if player == playerName {
+			return nil, errors.New("player already in the game")
+		}
+	}
+	game.Players = append(game.Players, playerName)
+
+	_, err = s.collection.UpdateOne(ctx, bson.M{"_id": gameIDObj}, bson.M{
+		"$set": bson.M{"players": game.Players},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &game, nil
+}
+
+// RemovePlayer removes a player from a game
+func (s *GameService) RemovePlayer(gameID, playerName string) (*models.Game, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	gameIDObj, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, errors.New("invalid game ID")
+	}
+
+	var game models.Game
+	err = s.collection.FindOne(ctx, bson.M{"_id": gameIDObj}).Decode(&game)
+	if err != nil {
+		return nil, errors.New("game not found")
+	}
+
+	// Remove the player from the game
+	newPlayers := []string{}
+	for _, player := range game.Players {
+		if player != playerName {
+			newPlayers = append(newPlayers, player)
+		}
+	}
+
+	// If the player was not found, return an error
+	if len(newPlayers) == len(game.Players) {
+		return nil, errors.New("player not found in the game")
+	}
+
+	game.Players = newPlayers
+
+	_, err = s.collection.UpdateOne(ctx, bson.M{"_id": gameIDObj}, bson.M{
+		"$set": bson.M{"players": game.Players},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &game, nil
+}

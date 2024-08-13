@@ -16,6 +16,8 @@ func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/games/{id}", handlers.DeleteGameHandler(gameService)).Methods("DELETE")
 	r.HandleFunc("/decks", handlers.CreateDeckHandler(deckService)).Methods("POST")
 	r.HandleFunc("/games/{id}/add-deck", handlers.AddDeckToGameHandler(gameService, deckService)).Methods("POST")
+	r.HandleFunc("/games/{id}/add-player", handlers.AddPlayerHandler(gameService)).Methods("POST")
+	r.HandleFunc("/games/{id}/remove-player", handlers.RemovePlayerHandler(gameService)).Methods("POST")
 
 	// Add other routes here...
 }
