@@ -108,3 +108,43 @@ func RemovePlayerHandler(gameService *services.GameService) http.HandlerFunc {
 		json.NewEncoder(w).Encode(game)
 	}
 }
+
+func ShuffleGameDeckHandler(gameService *services.GameService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		gameID := vars["id"]
+
+		game, err := gameService.ShuffleGameDeck(gameID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(game)
+	}
+}
+
+func DealCardToPlayerHandler(gameService *services.GameService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		gameID := vars["id"]
+
+		var req struct {
+			PlayerName string `json:"player_name"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request payload", http.StatusBadRequest)
+			return
+		}
+
+		card, err := gameService.DealCardToPlayer(gameID, req.PlayerName)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(card)
+	}
+}

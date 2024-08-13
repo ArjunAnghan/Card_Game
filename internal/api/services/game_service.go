@@ -164,3 +164,64 @@ func (s *GameService) RemovePlayer(gameID, playerName string) (*models.Game, err
 
 	return &game, nil
 }
+
+func (s *GameService) ShuffleGameDeck(gameID string) (*models.Game, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	gameIDObj, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, errors.New("invalid game ID")
+	}
+
+	var game models.Game
+	err = s.collection.FindOne(ctx, bson.M{"_id": gameIDObj}).Decode(&game)
+	if err != nil {
+		return nil, errors.New("game not found")
+	}
+
+	game.ShuffleDeck()
+
+	_, err = s.collection.UpdateOne(ctx, bson.M{"_id": gameIDObj}, bson.M{
+		"$set": bson.M{"game_deck": game.GameDeck},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &game, nil
+}
+
+func (s *GameService) DealCardToPlayer(gameID, playerName string) (*models.Card, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	gameIDObj, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, errors.New("invalid game ID")
+	}
+
+	var game models.Game
+	err = s.collection.FindOne(ctx, bson.M{"_id": gameIDObj}).Decode(&game)
+	if err != nil {
+		return nil, errors.New("game not found")
+	}
+
+	if len(game.GameDeck) == 0 {
+		return nil, errors.New("no cards left to deal")
+	}
+
+	// Deal the top card from the deck
+	dealtCard := game.GameDeck[0]
+	game.GameDeck = game.GameDeck[1:]
+
+	// Update the game state in the database
+	_, err = s.collection.UpdateOne(ctx, bson.M{"_id": gameIDObj}, bson.M{
+		"$set": bson.M{"game_deck": game.GameDeck},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &dealtCard, nil
+}

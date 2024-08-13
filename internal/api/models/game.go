@@ -1,6 +1,11 @@
 package models
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"math/rand"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Game struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
@@ -17,4 +22,11 @@ type Card struct {
 // AddDeckToGame adds a deck of cards to the game deck
 func (g *Game) AddDeckToGame(deck *Deck) {
 	g.GameDeck = append(g.GameDeck, deck.Cards...)
+}
+
+func (g *Game) ShuffleDeck() {
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(g.GameDeck), func(i, j int) {
+		g.GameDeck[i], g.GameDeck[j] = g.GameDeck[j], g.GameDeck[i]
+	})
 }
