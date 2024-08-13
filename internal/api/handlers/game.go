@@ -114,14 +114,13 @@ func ShuffleGameDeckHandler(gameService *services.GameService) http.HandlerFunc 
 		vars := mux.Vars(r)
 		gameID := vars["id"]
 
-		game, err := gameService.ShuffleGameDeck(gameID)
+		err := gameService.ShuffleGameDeck(gameID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(game)
+		w.WriteHeader(http.StatusOK)
 	}
 }
 

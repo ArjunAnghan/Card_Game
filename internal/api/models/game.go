@@ -26,8 +26,10 @@ func (g *Game) AddDeckToGame(deck *Deck) {
 }
 
 func (g *Game) ShuffleDeck() {
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(g.GameDeck), func(i, j int) {
-		g.GameDeck[i], g.GameDeck[j] = g.GameDeck[j], g.GameDeck[i]
-	})
+	rand.Seed(time.Now().UnixNano()) // Seed the random number generator
+	n := len(g.GameDeck)
+	for i := range g.GameDeck {
+		j := rand.Intn(n)                                           // Generate a random index
+		g.GameDeck[i], g.GameDeck[j] = g.GameDeck[j], g.GameDeck[i] // Swap the cards
+	}
 }

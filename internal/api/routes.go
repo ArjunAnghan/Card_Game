@@ -12,6 +12,8 @@ func RegisterRoutes(r *mux.Router) {
 	gameService := services.NewGameService()
 	deckService := services.NewDeckService()
 
+	// Add other routes here...
+
 	r.HandleFunc("/games", handlers.CreateGameHandler(gameService)).Methods("POST")
 	r.HandleFunc("/games/{id}", handlers.DeleteGameHandler(gameService)).Methods("DELETE")
 	r.HandleFunc("/decks", handlers.CreateDeckHandler(deckService)).Methods("POST")
@@ -25,5 +27,4 @@ func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/games/{id}/remaining-cards-suit-count", handlers.GetRemainingCardsCountBySuitHandler(gameService)).Methods("GET")
 	r.HandleFunc("/games/{id}/remaining-cards-sorted", handlers.GetRemainingCardsSortedHandler(gameService)).Methods("GET")
 
-	// Add other routes here...
 }

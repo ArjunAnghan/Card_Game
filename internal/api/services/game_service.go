@@ -182,31 +182,33 @@ func (s *GameService) RemovePlayer(gameID, playerName string) (*models.Game, err
 	return &game, nil
 }
 
-func (s *GameService) ShuffleGameDeck(gameID string) (*models.Game, error) {
+func (s *GameService) ShuffleGameDeck(gameID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	gameIDObj, err := primitive.ObjectIDFromHex(gameID)
 	if err != nil {
-		return nil, errors.New("invalid game ID")
+		return errors.New("invalid game ID")
 	}
 
 	var game models.Game
 	err = s.collection.FindOne(ctx, bson.M{"_id": gameIDObj}).Decode(&game)
 	if err != nil {
-		return nil, errors.New("game not found")
+		return errors.New("game not found")
 	}
 
+	// Shuffle the game deck
 	game.ShuffleDeck()
 
+	// Update the game state in the database
 	_, err = s.collection.UpdateOne(ctx, bson.M{"_id": gameIDObj}, bson.M{
 		"$set": bson.M{"game_deck": game.GameDeck},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &game, nil
+	return nil
 }
 
 func (s *GameService) DealCardToPlayer(gameID, playerName string) (*models.Card, error) {
