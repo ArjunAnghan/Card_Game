@@ -185,3 +185,19 @@ func GetPlayersWithHandValuesHandler(gameService *services.GameService) http.Han
 		json.NewEncoder(w).Encode(playerHandValues)
 	}
 }
+
+func GetRemainingCardsCountBySuitHandler(gameService *services.GameService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		gameID := vars["id"]
+
+		suitCounts, err := gameService.GetRemainingCardsCountBySuit(gameID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(suitCounts)
+	}
+}

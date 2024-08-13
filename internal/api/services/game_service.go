@@ -22,6 +22,11 @@ type GameService struct {
 	collection *mongo.Collection
 }
 
+type SuitCount struct {
+	Suit  string `json:"suit"`
+	Count int    `json:"count"`
+}
+
 func NewGameService() *GameService {
 	return &GameService{
 		collection: db.GetCollection("games"),
@@ -329,4 +334,44 @@ func (s *GameService) getCardValue(card models.Card) int {
 	default:
 		return 0
 	}
+}
+
+func (s *GameService) GetRemainingCardsCountBySuit(gameID string) ([]SuitCount, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	gameIDObj, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, errors.New("invalid game ID")
+	}
+
+	var game models.Game
+	err = s.collection.FindOne(ctx, bson.M{"_id": gameIDObj}).Decode(&game)
+	if err != nil {
+		return nil, errors.New("game not found")
+	}
+
+	// Initialize counters for each suit
+	suitCounts := map[string]int{
+		"Hearts":   0,
+		"Diamonds": 0,
+		"Clubs":    0,
+		"Spades":   0,
+	}
+
+	// Count the number of cards left for each suit
+	for _, card := range game.GameDeck {
+		suitCounts[card.Suit]++
+	}
+
+	// Convert the map to a slice of SuitCount
+	remainingCounts := []SuitCount{}
+	for suit, count := range suitCounts {
+		remainingCounts = append(remainingCounts, SuitCount{
+			Suit:  suit,
+			Count: count,
+		})
+	}
+
+	return remainingCounts, nil
 }
