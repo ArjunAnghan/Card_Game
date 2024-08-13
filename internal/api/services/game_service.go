@@ -5,12 +5,18 @@ import (
 	"errors"
 	"my-card-game/internal/api/models"
 	"my-card-game/internal/db"
+	"sort"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+type PlayerHandValue struct {
+	PlayerName string `json:"player_name"`
+	HandValue  int    `json:"hand_value"`
+}
 
 type GameService struct {
 	collection *mongo.Collection
@@ -215,13 +221,112 @@ func (s *GameService) DealCardToPlayer(gameID, playerName string) (*models.Card,
 	dealtCard := game.GameDeck[0]
 	game.GameDeck = game.GameDeck[1:]
 
+	// Add the card to the player's hand
+	if game.PlayerHands == nil {
+		game.PlayerHands = make(map[string][]models.Card)
+	}
+	game.PlayerHands[playerName] = append(game.PlayerHands[playerName], dealtCard)
+
 	// Update the game state in the database
 	_, err = s.collection.UpdateOne(ctx, bson.M{"_id": gameIDObj}, bson.M{
-		"$set": bson.M{"game_deck": game.GameDeck},
+		"$set": bson.M{"game_deck": game.GameDeck, "player_hands": game.PlayerHands},
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &dealtCard, nil
+}
+
+func (s *GameService) GetPlayerHand(gameID, playerName string) ([]models.Card, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	gameIDObj, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, errors.New("invalid game ID")
+	}
+
+	var game models.Game
+	err = s.collection.FindOne(ctx, bson.M{"_id": gameIDObj}).Decode(&game)
+	if err != nil {
+		return nil, errors.New("game not found")
+	}
+
+	hand, exists := game.PlayerHands[playerName]
+	if !exists {
+		return nil, errors.New("player not found or no cards dealt to this player")
+	}
+
+	return hand, nil
+}
+
+func (s *GameService) GetPlayersWithHandValues(gameID string) ([]PlayerHandValue, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	gameIDObj, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, errors.New("invalid game ID")
+	}
+
+	var game models.Game
+	err = s.collection.FindOne(ctx, bson.M{"_id": gameIDObj}).Decode(&game)
+	if err != nil {
+		return nil, errors.New("game not found")
+	}
+
+	// Calculate the hand value for each player
+	playerHandValues := []PlayerHandValue{}
+	for player, hand := range game.PlayerHands {
+		totalValue := 0
+		for _, card := range hand {
+			totalValue += s.getCardValue(card)
+		}
+		playerHandValues = append(playerHandValues, PlayerHandValue{
+			PlayerName: player,
+			HandValue:  totalValue,
+		})
+	}
+
+	// Sort the players by hand value in descending order
+	sort.Slice(playerHandValues, func(i, j int) bool {
+		return playerHandValues[i].HandValue > playerHandValues[j].HandValue
+	})
+
+	return playerHandValues, nil
+}
+
+// Helper function to get the value of a card
+func (s *GameService) getCardValue(card models.Card) int {
+	switch card.Value {
+	case "Ace":
+		return 1
+	case "2":
+		return 2
+	case "3":
+		return 3
+	case "4":
+		return 4
+	case "5":
+		return 5
+	case "6":
+		return 6
+	case "7":
+		return 7
+	case "8":
+		return 8
+	case "9":
+		return 9
+	case "10":
+		return 10
+	case "Jack":
+		return 11
+	case "Queen":
+		return 12
+	case "King":
+		return 13
+	default:
+		return 0
+	}
 }

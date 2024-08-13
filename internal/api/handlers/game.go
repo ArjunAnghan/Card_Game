@@ -148,3 +148,40 @@ func DealCardToPlayerHandler(gameService *services.GameService) http.HandlerFunc
 		json.NewEncoder(w).Encode(card)
 	}
 }
+func GetPlayerHandHandler(gameService *services.GameService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		gameID := vars["id"]
+		playerName := r.URL.Query().Get("player_name")
+
+		if playerName == "" {
+			http.Error(w, "player_name is required", http.StatusBadRequest)
+			return
+		}
+
+		hand, err := gameService.GetPlayerHand(gameID, playerName)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(hand)
+	}
+}
+
+func GetPlayersWithHandValuesHandler(gameService *services.GameService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		gameID := vars["id"]
+
+		playerHandValues, err := gameService.GetPlayersWithHandValues(gameID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(playerHandValues)
+	}
+}

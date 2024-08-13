@@ -20,5 +20,8 @@ func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/games/{id}/remove-player", handlers.RemovePlayerHandler(gameService)).Methods("POST")
 	r.HandleFunc("/games/{id}/shuffle", handlers.ShuffleGameDeckHandler(gameService)).Methods("POST")
 	r.HandleFunc("/games/{id}/deal-card", handlers.DealCardToPlayerHandler(gameService)).Methods("POST")
+	r.HandleFunc("/games/{id}/player-hand", handlers.GetPlayerHandHandler(gameService)).Methods("GET")
+	r.HandleFunc("/games/{id}/player-hand-values", handlers.GetPlayersWithHandValuesHandler(gameService)).Methods("GET")
+
 	// Add other routes here...
 }

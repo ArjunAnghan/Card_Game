@@ -8,10 +8,11 @@ import (
 )
 
 type Game struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
-	Name     string             `bson:"name" json:"name"`
-	Players  []string           `bson:"players" json:"players"` // This can be a slice of player IDs
-	GameDeck []Card             `bson:"game_deck" json:"game_deck"`
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Name        string             `bson:"name" json:"name"`
+	Players     []string           `bson:"players" json:"players"` // This can be a slice of player IDs
+	GameDeck    []Card             `bson:"game_deck" json:"game_deck"`
+	PlayerHands map[string][]Card  `bson:"player_hands" json:"player_hands"`
 }
 
 type Card struct {
