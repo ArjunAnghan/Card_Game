@@ -27,6 +27,12 @@ type SuitCount struct {
 	Count int    `json:"count"`
 }
 
+type CardCount struct {
+	Suit  string `json:"suit"`
+	Value string `json:"value"`
+	Count int    `json:"count"`
+}
+
 func NewGameService() *GameService {
 	return &GameService{
 		collection: db.GetCollection("games"),
@@ -374,4 +380,53 @@ func (s *GameService) GetRemainingCardsCountBySuit(gameID string) ([]SuitCount, 
 	}
 
 	return remainingCounts, nil
+}
+
+func (s *GameService) GetRemainingCardsSorted(gameID string) ([]CardCount, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	gameIDObj, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, errors.New("invalid game ID")
+	}
+
+	var game models.Game
+	err = s.collection.FindOne(ctx, bson.M{"_id": gameIDObj}).Decode(&game)
+	if err != nil {
+		return nil, errors.New("game not found")
+	}
+
+	// Initialize a map to count the cards
+	cardCounts := map[string]map[string]int{
+		"Hearts":   {},
+		"Diamonds": {},
+		"Clubs":    {},
+		"Spades":   {},
+	}
+
+	// Count the remaining cards in the game deck
+	for _, card := range game.GameDeck {
+		cardCounts[card.Suit][card.Value]++
+	}
+
+	// Convert the map to a slice of CardCount and sort it
+	remainingCards := []CardCount{}
+	suitsOrder := []string{"Hearts", "Spades", "Clubs", "Diamonds"}
+	valuesOrder := []string{"King", "Queen", "Jack", "10", "9", "8", "7", "6", "5", "4", "3", "2", "Ace"}
+
+	for _, suit := range suitsOrder {
+		for _, value := range valuesOrder {
+			count := cardCounts[suit][value]
+			if count > 0 {
+				remainingCards = append(remainingCards, CardCount{
+					Suit:  suit,
+					Value: value,
+					Count: count,
+				})
+			}
+		}
+	}
+
+	return remainingCards, nil
 }

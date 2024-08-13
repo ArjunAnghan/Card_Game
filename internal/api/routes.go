@@ -23,6 +23,7 @@ func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/games/{id}/player-hand", handlers.GetPlayerHandHandler(gameService)).Methods("GET")
 	r.HandleFunc("/games/{id}/player-hand-values", handlers.GetPlayersWithHandValuesHandler(gameService)).Methods("GET")
 	r.HandleFunc("/games/{id}/remaining-cards-suit-count", handlers.GetRemainingCardsCountBySuitHandler(gameService)).Methods("GET")
+	r.HandleFunc("/games/{id}/remaining-cards-sorted", handlers.GetRemainingCardsSortedHandler(gameService)).Methods("GET")
 
 	// Add other routes here...
 }
