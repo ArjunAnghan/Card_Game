@@ -43,3 +43,21 @@ func DeleteGameHandler(gameService *services.GameService) http.HandlerFunc {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
+func AddDeckToGameHandler(gameService *services.GameService, deckService *services.DeckService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		gameID := vars["id"]
+
+		// Create a new deck to be added to the game
+		deck := deckService.CreateDeck()
+
+		game, err := gameService.AddDeckToGame(gameID, deck)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(game)
+	}
+}

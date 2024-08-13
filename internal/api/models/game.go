@@ -13,3 +13,8 @@ type Card struct {
 	Suit  string `bson:"suit" json:"suit"`
 	Value string `bson:"value" json:"value"`
 }
+
+// AddDeckToGame adds a deck of cards to the game deck
+func (g *Game) AddDeckToGame(deck *Deck) {
+	g.GameDeck = append(g.GameDeck, deck.Cards...)
+}
