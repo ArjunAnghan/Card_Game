@@ -76,9 +76,10 @@ func (s *GameService) AddDeckToGame(gameID string, deck *models.Deck) (*models.G
 		return nil, errors.New("game not found")
 	}
 
-	// Add the deck to the game deck
-	game.AddDeckToGame(deck)
+	// Append the new deck to the existing game deck
+	game.GameDeck = append(game.GameDeck, deck.Cards...)
 
+	// Update the game document in the database
 	_, err = s.collection.UpdateOne(ctx, bson.M{"_id": gameIDObj}, bson.M{
 		"$set": bson.M{"game_deck": game.GameDeck},
 	})
